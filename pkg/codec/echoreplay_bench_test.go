@@ -101,7 +101,7 @@ func richSampleFrame() *telemetry.LobbySessionStateFrame {
 // BenchmarkEchoReplayReadFrame measures per-frame read throughput using ReadFrame
 // (allocating path) from a real .echoreplay file when available.
 func BenchmarkEchoReplayReadFrame(b *testing.B) {
-	const realFile = "../../_local/rec_2024-10-20_19-20-09.echoreplay"
+	const realFile = "../../testdata/sample.echoreplay"
 	inputFile := realFile
 
 	if _, err := os.Stat(realFile); os.IsNotExist(err) {

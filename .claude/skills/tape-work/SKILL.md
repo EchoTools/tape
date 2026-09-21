@@ -210,8 +210,8 @@ finding with its measurement and a Decision-line; do NOT fake green.
   written Gate 7 specifies a second `Co-authored-by: Metis Sprock` trailer that
   the repo does not actually use; observed practice wins per Gate 2.)
 - **Scratch** lives under `$CLAUDE_JOB_DIR/tmp` or `/var/tmp/work-tape/`, never
-  `/tmp`, never the repo. `_local/` is gitignored developer scratch and at least
-  one benchmark silently falls back when it is absent.
+  `/tmp`, never the repo. `_local/` is gitignored developer scratch; nothing
+  tracked may depend on it.
 
 ## Report — the standing sibling lines
 
