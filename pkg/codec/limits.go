@@ -219,8 +219,8 @@ func DefaultLimits() Limits {
 
 // readerConfig is the folded result of the options passed to a reader
 // constructor. Every integrity check it can perform is ON here, and an option
-// is what turns one off (Andrew, 2026-09-05: "all features default.... you use
-// args to opt out").
+// is what turns one off. A check that must be asked for by name protects only
+// the callers who already know it exists.
 //
 // WHY IT IS A STRUCT AND NOT Limits. ReaderOption used to be func(*Limits), so
 // the only thing an option could reach was a resource budget, and "is a missing

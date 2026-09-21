@@ -115,10 +115,10 @@ on. An absent seek table is a legal state meaning *not seekable or not finished*
 
 **It is the default as of v4.1.0, and opting OUT is what takes an argument.**
 It shipped opt-in, on the reasoning that a format change must be asked for by
-name. Andrew retired that reasoning on 2026-09-05: *"fix it. all features
-default.... you use args to opt out"*, and *"your acting like this proto is
-already released.. it's not.. THIS is the release."* The old reasoning was
-protecting a release that had not happened, and the cost was real — the
+name. That reasoning was retired on 2026-09-05: every feature is on by default
+and an argument opts out, and the format had not been released — v4.1.0 *is*
+the release. The old reasoning was protecting a release that had not happened,
+and the cost was real — the
 seekability this layout exists for was off for every caller who did not know the
 option's name, which was every caller, including `tapedeck trim` and
 `conversion.ConvertFile`.

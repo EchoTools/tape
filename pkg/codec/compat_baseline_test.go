@@ -47,12 +47,10 @@ import (
 //	4. The baseline reader reads HEAD's opt-out (whole-stream) output.
 //
 // WHAT CHANGED AT v4.1.0, AND WHY 3a/3b MOVED. Properties 3a and 3b used to
-// assert that HEAD's DEFAULT output was unchanged from the baseline's. Andrew
-// retired that claim on 2026-09-05 15:54:
-//
-//	"fix it. all features default.... you use args to opt out"
-//	"your acting like this proto is already released.. it's not.. THIS is
-//	 the release."
+// assert that HEAD's DEFAULT output was unchanged from the baseline's. That
+// claim was retired on 2026-09-05: every feature is on by default and an
+// argument opts out, and the format was not yet released, so v4.1.0 is the
+// release and its default may change.
 //
 // The default is now the per-block layout, so "the default bytes never change"
 // is FALSE and asserting it would fail by design. It was NOT deleted and it was
@@ -536,10 +534,10 @@ func TestBackwardCompatibility(t *testing.T) {
 			//
 			// RETIRED IN ITS ORIGINAL FORM AT v4.1.0, DELIBERATELY. This block
 			// used to compare HEAD's DEFAULT output against the baseline's and
-			// was titled "the default layout is unchanged". Andrew ruled the
-			// default changes for this release ("all features default.... you
-			// use args to opt out"; "THIS is the release"), so that claim is
-			// now false and would fail by construction.
+			// was titled "the default layout is unchanged". The default changes
+			// in this release (features default on, arguments opt out; the
+			// format was unreleased until v4.1.0), so that claim is now false
+			// and would fail by construction.
 			//
 			// It was retargeted rather than removed. The assertions were the
 			// same three, verbatim in substance — identical decompressed

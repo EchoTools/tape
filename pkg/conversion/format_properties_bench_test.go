@@ -322,7 +322,7 @@ func BenchmarkFrameBytesOnDisk(b *testing.B) {
 // QUESTION: at 30fps, how much tape SIZE does a 1-second keyframe interval cost
 // versus 2s, 5s, or none at all?
 //
-// WHY IT MATTERS: Andrew's "one per second" is a round number, not a measured
+// WHY IT MATTERS: "one per second" is a round number, not a measured
 // one. If the cost is 3% the interval should be dense; if it is 30% it is a
 // real trade that has to be argued.
 //

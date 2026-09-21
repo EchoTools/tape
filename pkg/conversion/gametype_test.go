@@ -4,9 +4,9 @@ import "testing"
 
 // Every symbol we know of, from every source we have:
 //
-//	[A] Andrew, verbatim: "in teh actual game egnien tehre is echo_arena,
-//	    echo_arena_private, echo_combat, echo_combat_private, etc. as gametype"
-//	    and separately combat_tournament / arena_tournament.
+//	[A] the engine's gametype symbols: echo_arena, echo_arena_private,
+//	    echo_combat, echo_combat_private and similar, plus combat_tournament /
+//	    arena_tournament. Not yet checked against echovr.exe.
 //	[T] the Title_Case v1 echoreplay spellings the shipped matchTypeMap held
 //	    before it was removed (mapping.go:40-47 @ cba7273).
 //	[C] nevr-common proto/api/v1/http_v1.proto:98-101 @ 4e367f3 -- api/v1 `mode`,

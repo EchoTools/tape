@@ -10,10 +10,9 @@ import (
 //
 // WHY THIS FILE EXISTS. Per-block compression shipped as opt-in, which meant
 // the property it was built for — a keyframe offset that is a servable byte
-// range — was off for every caller that did not know to ask. Andrew ruled on
-// 2026-09-05 15:54: "fix it. all features default.... you use args to opt out",
-// and "your acting like this proto is already released.. it's not.. THIS is the
-// release." So the zero-option writer produces the per-block layout, and
+// range — was off for every caller that did not know to ask. A feature that is
+// off unless named is a feature almost nobody gets, and the format was not yet
+// released, so nothing held the old default in place. So the zero-option writer produces the per-block layout, and
 // whole-stream is what now takes an argument.
 //
 // These tests assert the DEFAULT, from the constructor with no options at all —
@@ -89,8 +88,8 @@ func readCaptureFrameIndexes(t *testing.T, path string) []uint32 {
 // That is what a future change silently reverting the default would look like,
 // and it is the regression this repository has the most history with.
 
-// TestZeroOptionWriterIsPerBlockByDefault is the assertion Andrew's ruling
-// turns into code: a capture written with NO options is a per-block capture.
+// TestZeroOptionWriterIsPerBlockByDefault is that policy as code: a capture
+// written with NO options is a per-block capture.
 //
 // The two facts that together prove a capture is genuinely blocked rather than
 // merely readable are the pair property 4 of compat_baseline_test.go uses: it

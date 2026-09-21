@@ -304,10 +304,9 @@ func decodeEnvelopes(t *testing.T, block []byte) []*capturepb.Frame {
 //
 // What it used to assert was "nothing writes the new layout unless a caller
 // asks for it by name" — the constraint that made per-block landable when the
-// format was thought to be released. Andrew removed that constraint on
-// 2026-09-05 15:54: "fix it. all features default.... you use args to opt out",
-// and "your acting like this proto is already released.. it's not.. THIS is the
-// release." The default now IS the new layout, so the old assertion is false by
+// format was thought to be released. It was not released — v4.1.0 is the
+// release — so the constraint protected nothing, and features now default on
+// with arguments to opt out. The default now IS the new layout, so the old assertion is false by
 // construction; deleting it silently, or t.Skip()ing it, would have left the
 // suite quieter about the layout than it was before the change.
 //

@@ -442,8 +442,8 @@ func TestTruncationIsNeverACleanShortRead(t *testing.T) {
 // different kind of data loss.
 //
 // The DEFAULT is that a footerless capture is an error (that is F2). This is
-// the argument that opts out, per Andrew 2026-09-05: "all features default....
-// you use args to opt out". It must return the frames that survived AND it
+// the argument that opts out: every check is on by default and an argument is
+// what turns one off. It must return the frames that survived AND it
 // must not resurrect the silent case — a caller who passes it knows the tail is
 // gone, which is exactly the knowledge the default cannot assume.
 func TestWithoutFooterRequiredIsTheSalvagePath(t *testing.T) {

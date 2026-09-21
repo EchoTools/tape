@@ -131,9 +131,8 @@ func mapHeader(v1 *telemetryv1.TelemetryHeader, vocab *vocabulary) *capturepb.Ca
 		// add only OPTIONAL fields. This batch removed EchoArenaHeader.match_type,
 		// .private_match and .tournament_match plus eight MatchType values, so that
 		// promise is already false and is false whichever number is chosen here.
-		// It was legitimate only under the unreleased licence — Andrew, 2026-09-05:
-		// "your acting like this proto is already released.. it's not.. THIS is the
-		// release" (quoted in full at compat_baseline_test.go:47-53). nevr-proto is
+		// It was legitimate only because the format was unreleased: v4.1.0 is the
+		// release, so there was no shipped 2.x reader to break. nevr-proto is
 		// amending the sentence; this is the writer's half.
 		//
 		// WHY NOT LEAVE IT AT 1. 2.1.0 has been EMITTED — the rig captures on disk

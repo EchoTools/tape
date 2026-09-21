@@ -49,12 +49,11 @@ import (
 // the COMPRESSED file rather than in the decompressed stream.
 //
 // WHY IT IS THE DEFAULT, AND WHEN THAT CHANGED. It shipped opt-in, on the
-// reasoning that a format change must be asked for by name. Andrew overruled
-// that on 2026-09-05 15:54, and the ruling is the authority for this file:
-//
-//	"fix it. all features default.... you use args to opt out"
-//	"your acting like this proto is already released.. it's not.. THIS is
-//	 the release."
+// reasoning that a format change must be asked for by name. That reasoning was
+// protecting a release that had not happened — the format was unreleased, and
+// v4.1.0 is the release — while costing every caller that did not know the
+// option's name the seekability this layout exists for. Features default on;
+// arguments opt out.
 //
 // The old reasoning protected a release that had not happened. What it cost
 // was real: the seekability this layout exists for was off for every caller
@@ -149,8 +148,8 @@ func WithDictionary(dict []byte) WriterOption {
 
 // applyWriterOptions folds opts over the shipped defaults.
 func applyWriterOptions(opts []WriterOption) writerConfig {
-	// Every feature that CAN be on by default IS on by default (Andrew,
-	// 2026-09-05: "all features default.... you use args to opt out"). The one
+	// Every feature that CAN be on by default IS on by default; arguments opt
+	// out. The one
 	// exception is WithDictionary, and it is an exception of KIND rather than
 	// of policy: a dictionary is trained bytes that do not exist at
 	// construction time and cannot be conjured, and it is a permanent
