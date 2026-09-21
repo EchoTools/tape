@@ -53,7 +53,7 @@ func blockTestFrames(n int) []*capturepb.Frame {
 					GameClock:      300 - float32(i)*0.033,
 					BluePoints:     int32(i / 100),
 					OrangePoints:   int32(i / 150),
-					DiscHolderSlot: proto.Int32(int32(i % 8)),
+					DiscHolderSlot: new(int32(i % 8)),
 				},
 			},
 		}

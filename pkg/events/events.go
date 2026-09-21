@@ -103,18 +103,18 @@ type AsyncDetector struct {
 	syncMu sync.Mutex
 
 	// Drop counters for monitoring channel back-pressure.
-	droppedFrames uint64
-	droppedEvents uint64
+	droppedFrames atomic.Uint64
+	droppedEvents atomic.Uint64
 }
 
 // DroppedFrames returns the number of frames dropped due to a full input channel.
 func (ed *AsyncDetector) DroppedFrames() uint64 {
-	return atomic.LoadUint64(&ed.droppedFrames)
+	return ed.droppedFrames.Load()
 }
 
 // DroppedEvents returns the number of event batches dropped due to a full events channel.
 func (ed *AsyncDetector) DroppedEvents() uint64 {
-	return atomic.LoadUint64(&ed.droppedEvents)
+	return ed.droppedEvents.Load()
 }
 
 var _ Detector = (*AsyncDetector)(nil)
@@ -221,7 +221,7 @@ func (ed *AsyncDetector) ProcessFrame(frame *telemetry.LobbySessionStateFrame) {
 		// Detector is stopping, ignore frame
 	default:
 		// Channel full, drop frame
-		atomic.AddUint64(&ed.droppedFrames, 1)
+		ed.droppedFrames.Add(1)
 	}
 }
 
@@ -263,7 +263,7 @@ func (ed *AsyncDetector) processFrameSync(frame *telemetry.LobbySessionStateFram
 		default:
 			// Channel is full, drop events rather than blocking.
 			// This maintains the synchronous processing guarantee.
-			atomic.AddUint64(&ed.droppedEvents, 1)
+			ed.droppedEvents.Add(1)
 		}
 	}
 }
@@ -315,7 +315,7 @@ func (ed *AsyncDetector) processLoop() {
 				default:
 					// Channel full — drop events rather than blocking the frame
 					// processing pipeline. Matches the sync path's behavior.
-					atomic.AddUint64(&ed.droppedEvents, 1)
+					ed.droppedEvents.Add(1)
 				}
 			}
 
