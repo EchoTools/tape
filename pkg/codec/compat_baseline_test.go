@@ -152,6 +152,12 @@ var compatBaselines = []compatBaseline{
 			"release to point at. It is the only row whose byte-affecting pins are " +
 			"HEAD's, so it is the only row property 3b can run on",
 	},
+	{
+		Ref: "e1761fc",
+		Why: "the nevr-api bump to cae473b86bfc (MatchSettingsChanged, format 2.3.0). " +
+			"Not a tag: the commit that performed the bump, added for the same reason " +
+			"as 2b3fe97 — after it no older row pins HEAD's byte-affecting dependencies",
+	},
 }
 
 // byteIdenticalPins are the module requirements whose versions can change the
