@@ -324,7 +324,7 @@ func buildBaselineHarness(t *testing.T, ref string) string {
 	return b.binary
 }
 
-func buildBaseline(ref string) (string, error) {
+func buildBaseline(ref string) (binary string, err error) {
 	root, err := repoRoot()
 	if err != nil {
 		return "", fmt.Errorf("compat baseline %s: cannot locate the repository, so the "+
@@ -344,6 +344,13 @@ func buildBaseline(ref string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("compat baseline %s: %w", ref, err)
 	}
+	// TestMain only removes trees whose build succeeded; a failed build must
+	// take its own tree with it or it outlives the run.
+	defer func() {
+		if err != nil {
+			os.RemoveAll(dir) //nolint:errcheck // best-effort cleanup on a failure path
+		}
+	}()
 
 	// Extract only what the harness needs to compile: the codec package and the
 	// module definition of that era, so the baseline builds against the
@@ -405,7 +412,7 @@ func buildBaseline(ref string) (string, error) {
 		return "", fmt.Errorf("compat baseline %s: %w", ref, err)
 	}
 
-	binary := filepath.Join(dir, "harness")
+	binary = filepath.Join(dir, "harness")
 	build := exec.Command("go", "build", "-o", binary, "./cmd/compatharness")
 	build.Dir = dir
 	build.Env = append(os.Environ(), "GOWORK=off", "GOFLAGS=-mod=mod")
