@@ -31,6 +31,7 @@ import (
 // the original side, absent from the reconstruction, and absent from both frame
 // counts. Nothing in a field comparison can see it. The verdict has to.
 func TestVerifyFailsOnUnparseableFrame(t *testing.T) {
+	t.Parallel()
 	src := "../../testdata/sample.echoreplay"
 	dst := filepath.Join(t.TempDir(), "one_broken_frame.echoreplay")
 	broken := 0
@@ -68,6 +69,7 @@ func TestVerifyFailsOnUnparseableFrame(t *testing.T) {
 // content the reader throws away is missing from BOTH sides, so the comparison
 // reports zero differences and would call the file safe to delete.
 func TestVerifyFailsOnUnrepresentableKey(t *testing.T) {
+	t.Parallel()
 	src := "../../testdata/sample.echoreplay"
 	dst := filepath.Join(t.TempDir(), "unknown_key.echoreplay")
 	if n := injectPayloadKey(t, src, dst, 1, testInjectedKey); n == 0 {
@@ -92,6 +94,7 @@ func TestVerifyFailsOnUnrepresentableKey(t *testing.T) {
 // strength of "some file at this path verified" is how the wrong file gets
 // deleted.
 func TestVerifyIdentifiesItsSource(t *testing.T) {
+	t.Parallel()
 	src := "../../testdata/sample.echoreplay"
 	v, err := VerifyEchoReplayRoundTrip(src, VerifyOptions{Allowlist: KnownUnpreserved})
 	if err != nil {
@@ -132,6 +135,7 @@ func TestVerifyHasNoSkipKnob(t *testing.T) {
 // TestVerifyScanIsAlwaysWitnessed pins the other half of D1: the receipt states
 // the scan it actually performed, over the same number of frames the file has.
 func TestVerifyScanIsAlwaysWitnessed(t *testing.T) {
+	t.Parallel()
 	src := filepath.Join("..", "..", "testdata", "sample.echoreplay")
 	v, err := VerifyEchoReplayRoundTrip(src, VerifyOptions{Allowlist: KnownUnpreserved})
 	if err != nil {
@@ -155,6 +159,7 @@ func TestVerifyScanIsAlwaysWitnessed(t *testing.T) {
 // comparison, and cannot be reconstructed. Before this lane the file below
 // produced a clean FIDELITY PASS.
 func TestVerifyFailsOnExtraTabField(t *testing.T) {
+	t.Parallel()
 	src := filepath.Join("..", "..", "testdata", "sample.echoreplay")
 	dst := filepath.Join(t.TempDir(), "extra_tab_field.echoreplay")
 	n := rebuildWithExtraTabField(t, src, dst, "{\"unreachable\":\"payload\"}")
@@ -180,6 +185,7 @@ func TestVerifyFailsOnExtraTabField(t *testing.T) {
 // reader and the scanner bind ONE member of the archive; a second member is
 // content the round trip cannot represent, and it was silently discarded.
 func TestVerifyFailsOnSecondZipMember(t *testing.T) {
+	t.Parallel()
 	src := filepath.Join("..", "..", "testdata", "sample.echoreplay")
 	dst := filepath.Join(t.TempDir(), "two_members.echoreplay")
 	rebuildWithSecondMember(t, src, dst, "second.echoreplay")
@@ -464,6 +470,7 @@ func TestEmptyBonesMessageIsAbsent(t *testing.T) {
 // container; conversion reads those, and the key scan used to refuse them, so a
 // convertible recording could never be verified.
 func TestVerifyReadsUnzippedRecordings(t *testing.T) {
+	t.Parallel()
 	src := filepath.Join("..", "..", "testdata", "sample.echoreplay")
 	zr, err := zip.OpenReader(src)
 	if err != nil {

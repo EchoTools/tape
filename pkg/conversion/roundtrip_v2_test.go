@@ -17,6 +17,7 @@ import (
 // by hand and had missed fields; the differ walks the schema, so a field added
 // to the proto is compared without anyone editing this file.
 func TestRoundTripBAC(t *testing.T) {
+	t.Parallel()
 	verifyRoundTrip(t, filepath.Join("..", "..", "testdata", "sample.echoreplay"))
 }
 
