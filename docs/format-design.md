@@ -205,10 +205,10 @@ Measured on a real arena recording (`TestFieldLossAudit`, 22,727 frames /
 
 - **Lossless today:** `echoreplay ↔ echoreplay` via the v1 codec (full
   `SessionResponse`).
-- **`echoreplay → v2 → echoreplay` runs today** and is exact on every
-  recoverable field — `TestRoundTripBAC`, 0 mismatches on the committed sample
-  (max magnitude deviation 0, max orientation 2.4e-3, both inside tolerance).
-  The reconstructor **is** built (§1).
+- **`echoreplay → v2 → echoreplay` runs today** and `tapedeck verify` checks it
+  field for field (below). On the committed sample every one of 138
+  `SessionResponse` fields is compared and only `last_throw` differs
+  (`TestRoundTripBAC`). The reconstructor **is** built (§1).
 - **What still does not round-trip** (measured; `TestRoundTripBAC` reports this as
   a finding):
   - `last_throw` — the engine reports only the **recording client's** own last
@@ -216,12 +216,20 @@ Measured on a real arena recording (`TestFieldLossAudit`, 22,727 frames /
     come from the game server, which never records it. **Out of scope, not a
     gap:** it is not stored and must never be reconstructed from `DiscThrown`
     (that fabricates data). gh #35.
+  - **Session settings that change mid-capture** — `rules_changed_by`,
+    `rules_changed_at` and `total_round_count` have only a header home
+    (`EchoArenaHeader`), which holds the first value seen, so every frame after
+    a change comes back with the old value. Measured 2026-09-21: 3 of 14 real
+    recordings (793, 4,333 and 33,279 frames). Needs a v2 home in nevr-proto — a
+    change event — before those recordings can pass. gh #59.
   - `game_clock_display` — derived text, rebuilt by truncating the stored
     `float32` clock to centiseconds (`gameClockDisplay`,
-    `pkg/conversion/reconstruct.go`). Off by 0.01 s when the clock sits within
-    ~5e-6 of a centisecond boundary (measured 2026-09-21: `"01:43.52"` in,
-    `"01:43.51"` out, one frame in 10,581). Tolerated: `game_clock` itself is
-    kept, and `game_status` (which drives `RoundEndSensor`) round-trips.
+    `pkg/conversion/reconstruct.go`). The engine formats it from clock bits the
+    printed `game_clock` does not carry (`227.64` displayed as `03:47.63`), so
+    no formula over the stored value is exact: measured 2026-09-21, 2 of 197,125
+    real frames are one centisecond off, and the verifier accepts exactly that.
+    `game_clock` itself is kept, and `game_status` (which drives
+    `RoundEndSensor`) round-trips.
 - **Byte-exact `.echoreplay` output is not a goal.** `.echoreplay` is being
   retired within months; nothing will read regenerated files, so what matters
   is that `.tape` holds the data. Measured 2026-09-21 on three real captures
@@ -236,18 +244,29 @@ Measured on a real arena recording (`TestFieldLossAudit`, 22,727 frames /
   per-frame `jersey_number` / `level` (ROSTER-001), and the scoreboard seed
   round-trip.
 - **The deletion gate.** `.tape` exists so the `.echoreplay` archive can be
-  deleted. A source file may be deleted only because *that file* passed a
-  whole-file comparison of its parsed frames against the frames reconstructed
-  from its `.tape`: every field of every frame, with the tolerances above
-  (`float32` narrowing, orientation ≤ 3e-3 per component, derived display
-  text). It fails on a dropped frame, an unparseable line, an unknown JSON key,
-  a value outside tolerance, or a field lost that is not on this section's
-  documented list. Formatting, key order, line endings, and absent-vs-empty keys
-  are not compared. A sample is not enough; the run covers every recording and
-  writes a per-file receipt (source sha256, frame count, per-field deviations,
-  verdict). Main has no such verifier — `tapedeck verify` checks events only.
-  The differ lives on `archive/fidelity-batch-2026-07-25` (gh #43); the corpus
-  run is gh #57.
+  deleted. A source file may be deleted only because *that file* passed
+  `tapedeck verify <file.echoreplay>`, which exits non-zero otherwise. A sample
+  is not enough; the run covers every recording (gh #57). The verifier
+  (`conversion.VerifyEchoReplayRoundTrip`, comparison in `pkg/fidelity`)
+  converts, reconstructs, and compares every field of every frame, walking the
+  schema so a new proto field is compared without code changes. Its receipt
+  gives source size and sha256, frame counts, key-scan coverage, per-message
+  field coverage, and every differing path with a count and an example.
+  - **Fails on:** a dropped or unparseable frame; a value outside tolerance on
+    any field not excused in `conversion.KnownUnpreserved` (today: `last_throw`
+    only, and a reconstruction that *sets* `last_throw` fails outright); a JSON
+    key the proto cannot hold that carries a non-zero value anywhere; surplus
+    tab-separated fields; a second zip member.
+  - **Tolerances:** `float64` leaves 1e-3 (a `float32` narrowing); orientation
+    basis 5e-3 per component (measured max 2.93e-3); `game_clock_display` one
+    centisecond; everything else exact.
+  - **Not failures:** formatting, key order and line endings (parsed records are
+    compared, not bytes); unknown keys that are always null/false/0/empty
+    (older recorders write the unused spelling of a field as null, e.g.
+    `head.pos: null` beside `head.position`); fields absent from both sides on
+    every frame (a server capture has no `last_throw`); an empty bones payload
+    (`{"user_bones":[],"err_code":0}`), which carries nothing; event-check
+    failures, which concern data derived from the frames and re-derivable.
 
 ## 5. Identity / roster reconstruction (the per-frame state is anonymized)
 
@@ -336,7 +355,8 @@ In `pkg/conversion/`, taking `TAPE_AUDIT_FILE` and skipping when absent:
 - `roster_rebuild_audit_test.go` — identity recovery from events
 - `possession_probe_test.go` — `possession[]` redundancy
 - `roundtrip_v2_test.go` `TestRoundTripBACAudit` — the full
-  `echoreplay → v2 → echoreplay` comparison on an external capture
+  `echoreplay → v2 → echoreplay` verification on an external capture (the same
+  check as `tapedeck verify <file>`)
 
 `TAPE_AUDIT_FILE` must be an **absolute** path: these run with the package
 directory as cwd, and a relative path silently takes the skip branch.
