@@ -216,35 +216,38 @@ Measured on a real arena recording (`TestFieldLossAudit`, 22,727 frames /
     come from the game server, which never records it. **Out of scope, not a
     gap:** it is not stored and must never be reconstructed from `DiscThrown`
     (that fabricates data). gh #35.
-  - `game_clock_display` — rebuilt by truncating the stored `float32` clock to
-    centiseconds (`gameClockDisplay`, `pkg/conversion/reconstruct.go`). Measured
-    2026-09-21 on `rec_2026-07-09_20-12-37.echoreplay` line 8633: `"01:43.52"`
-    in, `"01:43.51"` out — the ~5e-6 boundary window the comment predicted.
-    Display text only: `game_clock` itself and `game_status` (which drives
-    `RoundEndSensor`) round-trip.
-  - **Not byte-exact.** Measured 2026-09-21 on three real captures (10,581,
-    2,613 and 8,106 frames; 0 dropped): separators, top-level key order, float
-    printing and line endings (LF sources come back CRLF) differ; empty keys the
-    engine never wrote are emitted (`Weapon`/`Ordnance`/`TacMod`, `payload_*`,
-    `client_name` on recorders that omitted it); orientation basis differs by up
-    to 2.93e-3 per component (≈0.17°) because the engine's basis is not exactly
-    orthonormal and the quaternion is. Whether the deletion gate requires
-    byte-exact floats or only exact values is open in gh #46.
+  - `game_clock_display` — derived text, rebuilt by truncating the stored
+    `float32` clock to centiseconds (`gameClockDisplay`,
+    `pkg/conversion/reconstruct.go`). Off by 0.01 s when the clock sits within
+    ~5e-6 of a centisecond boundary (measured 2026-09-21: `"01:43.52"` in,
+    `"01:43.51"` out, one frame in 10,581). Tolerated: `game_clock` itself is
+    kept, and `game_status` (which drives `RoundEndSensor`) round-trips.
+- **Byte-exact `.echoreplay` output is not a goal.** `.echoreplay` is being
+  retired within months; nothing will read regenerated files, so what matters
+  is that `.tape` holds the data. Measured 2026-09-21 on three real captures
+  (10,581, 2,613 and 8,106 frames; 0 dropped), regenerated files differ in
+  separators, key order, float printing, line endings and emitted empty keys —
+  all irrelevant to the archive. Orientation basis differs by up to 2.93e-3 per
+  component (≈0.17°): the engine's basis is not exactly orthonormal and the
+  stored quaternion is, so this is engine rounding noise removed, not signal
+  lost.
 - **Goal:** v2 is a working superset for the recoverable lane (kinematics +
   identity + loadout + grab + disc + scores). `last_score` (LASTSCORE-001),
   per-frame `jersey_number` / `level` (ROSTER-001), and the scoreboard seed
   round-trip.
 - **The deletion gate.** `.tape` exists so the `.echoreplay` archive can be
   deleted. A source file may be deleted only because *that file* passed a
-  whole-file `echoreplay → .tape → echoreplay` verification with an empty
-  allowlist: every field of every frame compared, and an error on a field
-  missing from either side, any difference, an unparseable line, an unknown
-  JSON key, or a surplus zip member. Belief that the format is good is not
-  enough and a sample is not enough; the run covers every recording and writes
-  a per-file receipt (source sha256, line count, frame count, per-field diffs,
-  verdict). Main has no such verifier: `tapedeck verify` checks events only,
-  and `tapedeck convert` cannot write `.echoreplay`. The differ lives on
-  `archive/fidelity-batch-2026-07-25` (gh #43); the corpus run is gh #57.
+  whole-file comparison of its parsed frames against the frames reconstructed
+  from its `.tape`: every field of every frame, with the tolerances above
+  (`float32` narrowing, orientation ≤ 3e-3 per component, derived display
+  text). It fails on a dropped frame, an unparseable line, an unknown JSON key,
+  a value outside tolerance, or a field lost that is not on this section's
+  documented list. Formatting, key order, line endings, and absent-vs-empty keys
+  are not compared. A sample is not enough; the run covers every recording and
+  writes a per-file receipt (source sha256, frame count, per-field deviations,
+  verdict). Main has no such verifier — `tapedeck verify` checks events only.
+  The differ lives on `archive/fidelity-batch-2026-07-25` (gh #43); the corpus
+  run is gh #57.
 
 ## 5. Identity / roster reconstruction (the per-frame state is anonymized)
 
