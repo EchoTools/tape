@@ -375,6 +375,8 @@ func classifyEvent(evt *capturepb.EchoEvent) capturepb.EventType {
 		return capturepb.EventType_EVENT_TYPE_MATCH_ENDED
 	case *capturepb.EchoEvent_ScoreboardUpdated:
 		return capturepb.EventType_EVENT_TYPE_SCOREBOARD_UPDATED
+	case *capturepb.EchoEvent_MatchSettingsChanged:
+		return capturepb.EventType_EVENT_TYPE_MATCH_SETTINGS_CHANGED
 	case *capturepb.EchoEvent_PlayerJoined:
 		return capturepb.EventType_EVENT_TYPE_PLAYER_JOINED
 	case *capturepb.EchoEvent_PlayerLeft:

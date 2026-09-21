@@ -98,6 +98,21 @@ func seedEventsForCut(sess *conversion.Session, prev int) []*capturepb.EchoEvent
 		})
 	}
 
+	// Match settings — the trimmed capture keeps the source header, whose values
+	// are the capture-start ones; restate the settings in effect at the cut when
+	// a change happened before it (gh #59). MatchSettingsAt(-1) is the header.
+	if ms := sess.MatchSettingsAt(prev); ms != sess.MatchSettingsAt(-1) {
+		events = append(events, &capturepb.EchoEvent{
+			Event: &capturepb.EchoEvent_MatchSettingsChanged{
+				MatchSettingsChanged: &capturepb.MatchSettingsChanged{
+					RulesChangedBy:  ms.RulesChangedBy,
+					RulesChangedAt:  ms.RulesChangedAt,
+					TotalRoundCount: ms.TotalRoundCount,
+				},
+			},
+		})
+	}
+
 	// Last goal — the engine carries last_score forward on every frame, so the
 	// most recent GoalScored has to survive the cut.
 	if g := sess.LastGoalAt(prev); g != nil {

@@ -55,6 +55,17 @@ type Session struct {
 	// last_score field is a carried-forward snapshot, so replaying the event
 	// forward reproduces it on every frame.
 	lastGoal []*capturepb.GoalScored
+	// settings is the latest MatchSettingsChanged as of each frame, nil before
+	// the first (the header's capture-start values apply).
+	settings []*capturepb.MatchSettingsChanged
+}
+
+// MatchSettings are the session settings the header records at capture start
+// and MatchSettingsChanged updates.
+type MatchSettings struct {
+	RulesChangedBy  string
+	RulesChangedAt  uint64
+	TotalRoundCount int32
 }
 
 // NewSession builds a Session from a v2 Echo Arena header and its frames, in
@@ -71,6 +82,7 @@ func NewSession(header *capturepb.EchoArenaHeader, frames []*capturepb.Frame) *S
 		score:    make([]Score, len(frames)),
 		stats:    make([]map[int32]*capturepb.PlayerStatsUpdated, len(frames)),
 		lastGoal: make([]*capturepb.GoalScored, len(frames)),
+		settings: make([]*capturepb.MatchSettingsChanged, len(frames)),
 	}
 	s.replay()
 	return s
@@ -177,6 +189,18 @@ func (s *Session) ScoreAt(frame int) Score {
 	return s.score[frame]
 }
 
+// MatchSettingsAt returns the match settings in effect at the given frame
+// ordinal: the latest MatchSettingsChanged at or before it, else the header's
+// capture-start values. An out-of-range ordinal (e.g. -1) returns the header's.
+func (s *Session) MatchSettingsAt(frame int) MatchSettings {
+	if frame >= 0 && frame < len(s.settings) {
+		if e := s.settings[frame]; e != nil {
+			return MatchSettings{e.GetRulesChangedBy(), e.GetRulesChangedAt(), e.GetTotalRoundCount()}
+		}
+	}
+	return MatchSettings{s.header.GetRulesChangedBy(), s.header.GetRulesChangedAt(), s.header.GetTotalRoundCount()}
+}
+
 // replay walks the frames once, applying each frame's events on top of the
 // running state and recording the post-event state per frame. State maps are
 // shared between frames and cloned only when a frame actually mutates them
@@ -191,6 +215,7 @@ func (s *Session) replay() {
 	stats := map[int32]*capturepb.PlayerStatsUpdated{}
 	var score Score
 	var lastGoal *capturepb.GoalScored
+	var settings *capturepb.MatchSettingsChanged
 
 	for i, f := range s.frames {
 		rosterDirty, loadoutDirty, grabDirty, statsDirty := false, false, false, false
@@ -288,6 +313,8 @@ func (s *Session) replay() {
 					statsDirty = true
 				}
 				stats[su.GetPlayerSlot()] = su
+			case *capturepb.EchoEvent_MatchSettingsChanged:
+				settings = e.MatchSettingsChanged
 			case *capturepb.EchoEvent_ScoreboardUpdated:
 				sb := e.ScoreboardUpdated
 				score = Score{
@@ -306,5 +333,6 @@ func (s *Session) replay() {
 		s.score[i] = score
 		s.stats[i] = stats
 		s.lastGoal[i] = lastGoal
+		s.settings[i] = settings
 	}
 }

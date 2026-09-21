@@ -259,10 +259,13 @@ func (rc *SessionReconstructor) reconstructSession(i int, ea *capturepb.EchoAren
 		MatchType:       rc.header.GetGameType(),
 		PrivateMatch:    rc.gameType.Private,
 		TournamentMatch: rc.gameType.Tournament,
-		TotalRoundCount: rc.ea.GetTotalRoundCount(),
-		RulesChangedBy:  rc.ea.GetRulesChangedBy(),
-		RulesChangedAt:  rc.ea.GetRulesChangedAt(),
 	}
+	// The header holds capture-start values; MatchSettingsChanged carries each
+	// later change (gh #59).
+	settings := rc.session.MatchSettingsAt(i)
+	s.TotalRoundCount = settings.TotalRoundCount
+	s.RulesChangedBy = settings.RulesChangedBy
+	s.RulesChangedAt = settings.RulesChangedAt
 	if ea == nil {
 		return s
 	}

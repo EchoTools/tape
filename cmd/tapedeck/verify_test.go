@@ -57,6 +57,18 @@ func TestVerifyCommandRunsTheRoundTripVerification(t *testing.T) {
 // data the tape never held.
 func withUnknownKey(t *testing.T, src string) string {
 	t.Helper()
+	return editRecording(t, src, func(i int, line []byte) []byte {
+		if i != 0 {
+			return line
+		}
+		return bytes.Replace(line, []byte("\t{"), []byte("\t{\"unknown_future_field\":1,"), 1)
+	})
+}
+
+// editRecording copies a zipped .echoreplay with edit applied to each frame
+// line (i is the line ordinal) and returns the copy's path.
+func editRecording(t *testing.T, src string, edit func(i int, line []byte) []byte) string {
+	t.Helper()
 	zr, err := zip.OpenReader(src)
 	if err != nil {
 		t.Fatalf("open %s: %v", src, err)
@@ -71,12 +83,12 @@ func withUnknownKey(t *testing.T, src string) string {
 	if err != nil {
 		t.Fatalf("read member: %v", err)
 	}
-	injected := bytes.Replace(body, []byte("\t{"), []byte("\t{\"unknown_future_field\":1,"), 1)
-	if bytes.Equal(injected, body) {
-		t.Fatal("sample has no frame line to inject into")
+	lines := bytes.Split(bytes.TrimRight(body, "\r\n"), []byte("\n"))
+	for i, l := range lines {
+		lines[i] = edit(i, bytes.TrimRight(l, "\r"))
 	}
 
-	dst := filepath.Join(t.TempDir(), "unknown-key.echoreplay")
+	dst := filepath.Join(t.TempDir(), "edited.echoreplay")
 	f, err := os.Create(dst)
 	if err != nil {
 		t.Fatalf("create %s: %v", dst, err)
@@ -86,7 +98,7 @@ func withUnknownKey(t *testing.T, src string) string {
 	if err != nil {
 		t.Fatalf("zip create: %v", err)
 	}
-	if _, err := w.Write(injected); err != nil {
+	if _, err := w.Write(append(bytes.Join(lines, []byte("\n")), '\n')); err != nil {
 		t.Fatalf("zip write: %v", err)
 	}
 	if err := zw.Close(); err != nil {

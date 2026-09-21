@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	"github.com/echotools/tape/v4/pkg/codec"
@@ -148,6 +149,40 @@ func TestTrim_PreservesStateAcrossTheCut(t *testing.T) {
 
 	if want, g := orig.LastGoalAt(cutOrdinal), got.LastGoalAt(0); !proto.Equal(g, want) {
 		t.Errorf("last goal differs:\n got %v\nwant %v", g, want)
+	}
+}
+
+// Match settings change mid-capture and ride MatchSettingsChanged events
+// (gh #59), so a cut after a change must restate them: without a seed the
+// trimmed capture falls back to the header's capture-start values.
+func TestTrim_PreservesMatchSettingsAcrossTheCut(t *testing.T) {
+	const cutOrdinal = 800
+	reRounds := regexp.MustCompile(`"total_round_count":[0-9]+`)
+	reBy := regexp.MustCompile(`"rules_changed_by":"[^"]*"`)
+	src := editRecording(t, filepath.Join("..", "..", "testdata", "sample.echoreplay"), func(i int, line []byte) []byte {
+		if i >= 300 {
+			line = reBy.ReplaceAll(line, []byte(`"rules_changed_by":"Editor"`))
+		}
+		if i >= 700 {
+			line = reRounds.ReplaceAll(line, []byte(`"total_round_count":5`))
+		}
+		return line
+	})
+	tape := filepath.Join(t.TempDir(), "settings.tape")
+	if _, err := conversion.ConvertFile(src, tape); err != nil {
+		t.Fatalf("convert: %v", err)
+	}
+
+	orig := openSessionAt(t, tape)
+	want := orig.MatchSettingsAt(cutOrdinal)
+	if want.TotalRoundCount != 5 || want.RulesChangedBy != "Editor" {
+		t.Fatalf("premise: source settings at the cut are %+v, want the edited values", want)
+	}
+	out := filepath.Join(t.TempDir(), "trimmed.tape")
+	runTrimCmd(t, tape, out, frameTimestampAt(t, tape, cutOrdinal))
+
+	if got := openSessionAt(t, out).MatchSettingsAt(0); got != want {
+		t.Errorf("match settings after the cut = %+v, want %+v", got, want)
 	}
 }
 

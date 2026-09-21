@@ -196,6 +196,8 @@ func eventTypeName(evt *capturepb.EchoEvent) string {
 		return "MatchEnded"
 	case *capturepb.EchoEvent_ScoreboardUpdated:
 		return "ScoreboardUpdated"
+	case *capturepb.EchoEvent_MatchSettingsChanged:
+		return "MatchSettingsChanged"
 	case *capturepb.EchoEvent_PlayerJoined:
 		return "PlayerJoined"
 	case *capturepb.EchoEvent_PlayerLeft:

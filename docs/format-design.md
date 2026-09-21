@@ -48,7 +48,10 @@ v2 is **not** "every field, every frame." It is a high-performance format for
   live in `EchoArenaHeader.initial_roster` (`PlayerInfo`), written once. Server
   IP lives in `EchoArenaHeader.session_ip`.
 - **Discrete changes → events** (`EchoEvent`). Joins, leaves, goals, team
-  switches, disc possession changes, loadout changes, grab changes. Reconstruct
+  switches, disc possession changes, loadout changes, grab changes, and match
+  settings (`MatchSettingsChanged`: `rules_changed_by`, `rules_changed_at`,
+  `total_round_count` — the header holds their capture-start values, and each
+  later change carries all three; format 2.3.0, gh #59). Reconstruct
   per-frame state by replaying events (see §5).
 - **Per-frame-varying → per-frame fields** on `EchoArenaFrame` / `PlayerState`.
   Poses, velocity, flags, ping, scores, clock, disc, analog shoulder input,
@@ -216,12 +219,6 @@ Measured on a real arena recording (`TestFieldLossAudit`, 22,727 frames /
     come from the game server, which never records it. **Out of scope, not a
     gap:** it is not stored and must never be reconstructed from `DiscThrown`
     (that fabricates data). gh #35.
-  - **Session settings that change mid-capture** — `rules_changed_by`,
-    `rules_changed_at` and `total_round_count` have only a header home
-    (`EchoArenaHeader`), which holds the first value seen, so every frame after
-    a change comes back with the old value. Measured 2026-09-21: 3 of 14 real
-    recordings (793, 4,333 and 33,279 frames). Needs a v2 home in nevr-proto — a
-    change event — before those recordings can pass. gh #59.
   - `game_clock_display` — derived text, rebuilt by truncating the stored
     `float32` clock to centiseconds (`gameClockDisplay`,
     `pkg/conversion/reconstruct.go`). The engine formats it from clock bits the

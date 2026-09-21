@@ -197,6 +197,7 @@ func convertFromV1Reader(reader v1Reader, inputPath, outputPath string) (*Conver
 		baseTime = createdAt.AsTime()
 	}
 	mapper := &FrameMapper{BaseTime: baseTime, vocab: vocab}
+	mapper.SeedMatchSettings(v2Header.GetEchoArena())
 
 	writer, err := codec.NewWriter(outputPath)
 	if err != nil {

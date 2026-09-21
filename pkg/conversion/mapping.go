@@ -125,36 +125,21 @@ func mapHeader(v1 *telemetryv1.TelemetryHeader, vocab *vocabulary) *capturepb.Ca
 		CaptureId:     v1.GetCaptureId(),
 		CreatedAt:     v1.GetCreatedAt(),
 		FormatVersion: 2,
-		// 2.2.0. THE FIRST MINOR THAT REMOVES FIELDS, which the schema's own
-		// compatibility sentence does not permit — `capture.proto` promises that a
-		// reader understanding MAJOR=2 reads any 2.x file and that unknown minors
-		// add only OPTIONAL fields. This batch removed EchoArenaHeader.match_type,
-		// .private_match and .tournament_match plus eight MatchType values, so that
-		// promise is already false and is false whichever number is chosen here.
-		// It was legitimate only because the format was unreleased: v4.1.0 is the
-		// release, so there was no shipped 2.x reader to break. nevr-proto is
-		// amending the sentence; this is the writer's half.
+		// 2.3.0 adds MatchSettingsChanged: rules_changed_by, rules_changed_at and
+		// total_round_count were header-only and change mid-capture (gh #59). The
+		// change is additive — what the minor contract in capture.proto permits —
+		// and it is bumped anyway because a 2.2 reader drops the event and
+		// reconstructs the capture-start values on every frame, silently; the
+		// minor is the only thing that tells such a capture apart. Nothing in this
+		// repository reads format_minor to change behaviour (the version gate is on
+		// format_version), so the bump costs nothing.
 		//
-		// WHY NOT LEAVE IT AT 1. 2.1.0 has been EMITTED — the rig captures on disk
-		// carry format_minor: 1 and one was read on 2026-09-07. Unreleased is not
-		// the same as nonexistent, and reusing the number would leave two
-		// byte-incompatible schemas both stamped 2.1.0 with nothing able to tell
-		// them apart. Detectable beats tidy.
-		//
-		// WHY NOT MAJOR 3. gh #46 is an open architecture decision titled "v2 as
-		// archival bridge, v3 as engine-native", so 3 already has a planned
-		// meaning; spending it here would pre-empt a decision nobody has made.
-		//
-		// THE COST OF THIS BUMP IS ZERO AND THAT IS THE ARGUMENT, not a caveat.
-		// Nothing in this repository READS format_minor to change behaviour —
-		// `grep -rn "GetFormatMinor" pkg cmd` finds one assertion in a test and
-		// nothing else; the version gate is on format_version (MAJOR) at
-		// tape.go:426-429. So the field's only function is telling artifacts apart
-		// after the fact, and a marker left unchanged across a byte-incompatible
-		// schema change is a marker doing nothing. The counter-argument — "a
-		// version nobody consumed is noise" — assumes a cost this field does not
-		// have.
-		FormatMinor:   2,
+		// 2.2.0 was the first minor that REMOVED fields (EchoArenaHeader.
+		// match_type, .private_match, .tournament_match and eight MatchType
+		// values), legitimate only because the format was unreleased: v4.1.0 is
+		// the release. 2.1.0 had been emitted, so its number was not reused.
+		// Major 3 is reserved for gh #46 (v2 archival bridge, v3 engine-native).
+		FormatMinor:   3,
 		FormatPatch:   0,
 		FrameEncoding: capturepb.FrameEncoding_FRAME_ENCODING_SPARSE,
 		Metadata:      v1.GetMetadata(),
@@ -237,8 +222,8 @@ func mapHeaderFromSession(v1hdr *telemetryv1.TelemetryHeader, session *enginev1.
 		eaHeader.SessionIp = session.GetSessionIp()
 	}
 
-	// Session constants measured invariant across every frame of 15 sampled
-	// captures, so they are written once rather than per frame.
+	// Capture-start values. They change mid-capture (gh #59); FrameMapper emits
+	// MatchSettingsChanged for each later change.
 	if eaHeader.RulesChangedBy == "" {
 		eaHeader.RulesChangedBy = session.GetRulesChangedBy()
 	}
@@ -321,6 +306,9 @@ type FrameMapper struct {
 	prevGrab    map[int32]grabState
 	prevStats   map[int32]statCounters
 	prevInfo    map[int32]rosterInfo
+	// settings is the last known match settings; see appendMatchSettingsEvent.
+	settings       matchSettings
+	settingsSeeded bool
 	// vocab accumulates engine strings no conversion table recognised
 	// (VOCAB-001). Nil is valid and records nothing.
 	vocab *vocabulary
@@ -390,7 +378,52 @@ func (m *FrameMapper) MapFrame(v1f *telemetryv1.LobbySessionStateFrame) (*captur
 		return nil, fmt.Errorf("FrameMapper.MapFrame: %w", err)
 	}
 	m.appendLoadoutGrabEvents(v1f, frame)
+	m.appendMatchSettingsEvent(v1f, frame)
 	return frame, nil
+}
+
+// matchSettings are the session settings the header holds as capture-start
+// values and MatchSettingsChanged carries when they change.
+type matchSettings struct {
+	rulesBy    string
+	rulesAt    uint64
+	roundCount int32
+}
+
+// SeedMatchSettings sets the values the header recorded, so the first frame
+// that differs from them emits MatchSettingsChanged. Without a seed, the first
+// frame seeds silently — right when the header was built from that frame.
+func (m *FrameMapper) SeedMatchSettings(h *capturepb.EchoArenaHeader) {
+	m.settings = matchSettings{h.GetRulesChangedBy(), h.GetRulesChangedAt(), h.GetTotalRoundCount()}
+	m.settingsSeeded = true
+}
+
+// appendMatchSettingsEvent emits MatchSettingsChanged, carrying all three
+// current values, on a frame where any of them differs from the last known
+// value. They were header-only and change mid-capture (gh #59).
+func (m *FrameMapper) appendMatchSettingsEvent(v1f *telemetryv1.LobbySessionStateFrame, frame *capturepb.Frame) {
+	ea, s := frame.GetEchoArena(), v1f.GetSession()
+	if ea == nil || s == nil {
+		return
+	}
+	cur := matchSettings{s.GetRulesChangedBy(), s.GetRulesChangedAt(), s.GetTotalRoundCount()}
+	if !m.settingsSeeded {
+		m.settings, m.settingsSeeded = cur, true
+		return
+	}
+	if cur == m.settings {
+		return
+	}
+	m.settings = cur
+	ea.Events = append(ea.Events, &capturepb.EchoEvent{
+		Event: &capturepb.EchoEvent_MatchSettingsChanged{
+			MatchSettingsChanged: &capturepb.MatchSettingsChanged{
+				RulesChangedBy:  cur.rulesBy,
+				RulesChangedAt:  cur.rulesAt,
+				TotalRoundCount: cur.roundCount,
+			},
+		},
+	})
 }
 
 // appendLoadoutGrabEvents detects per-player loadout (weapon/ordnance/tac-mod)

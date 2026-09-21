@@ -25,9 +25,9 @@ the same tape bytes. The golden is committed and tracked (its
 `/testdata/*.golden` gitignore entry was removed), so `TestGoldenConvert` is a
 real byte-level fidelity gate, not just a smoke test.
 
-**Current golden** (measured 2026-09-07):
+**Current golden** (measured 2026-09-21):
 
-    sha256:8d8a0b4d1548c4b892b105a0bfdcdf184d24b519b776c46c0758ec54c8d8a301
+    sha256:a4ba97682a96a53eb4b517b40f37e28a822f2811485fc6fef5735a230ed72f46
     1642841 bytes, 1023 frames, 208 events
 
 **THIS BLOCK WAS STALE AGAIN AND THAT IS RECORDED RATHER THAN QUIETLY FIXED.**
@@ -48,6 +48,11 @@ telling whether the golden is the artifact it should be.
 
 Changing the golden means changing the converter's output. Say what changed it:
 
+- **2026-09-21** — `format_minor` 2 → 3 for `MatchSettingsChanged` (gh #59).
+  The sample's match settings never change, so it carries no such event:
+  frames and events unchanged at 1023 / 208, size unchanged at 1642841 bytes
+  (single-byte varint), sha `8d8a0b4d…` → `a4ba9768…`. Predicted before
+  running, all three held.
 - **2026-09-07** — `format_minor` 1 → 2. The batch that removed
   `EchoArenaHeader.match_type` / `.private_match` / `.tournament_match` is not an
   additive minor, so it does not get to keep 2.1.0 — captures carrying

@@ -68,7 +68,7 @@ func TestClassifyEventGapIsStillReal(t *testing.T) {
 	variants := oneof.Fields().Len()
 	mappable := variants - len(eventTypeGap)
 
-	const wantVariants, wantMappable = 28, 28
+	const wantVariants, wantMappable = 29, 29
 	if variants != wantVariants || mappable != wantMappable {
 		t.Errorf("EchoEvent has %d variants (%d mappable); expected %d and %d. "+
 			"The proto changed — reconcile classifyEvent and eventTypeGap",

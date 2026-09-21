@@ -1076,11 +1076,12 @@ func TestFloat32SliceToBytes(t *testing.T) {
 	}
 }
 
-// Item 1 (F): the converter declares SemVer 2.1.0 in the header.
-func TestMapHeader_DeclaresFormat210(t *testing.T) {
+// The converter declares the format SemVer in the header: 2.3.0, the minor that
+// adds MatchSettingsChanged.
+func TestMapHeader_DeclaresFormatVersion(t *testing.T) {
 	got := MapHeader(&telemetryv1.TelemetryHeader{CaptureId: "x"})
-	if got.GetFormatVersion() != 2 || got.GetFormatMinor() != 2 || got.GetFormatPatch() != 0 {
-		t.Errorf("format = %d.%d.%d, want 2.1.0",
+	if got.GetFormatVersion() != 2 || got.GetFormatMinor() != 3 || got.GetFormatPatch() != 0 {
+		t.Errorf("format = %d.%d.%d, want 2.3.0",
 			got.GetFormatVersion(), got.GetFormatMinor(), got.GetFormatPatch())
 	}
 }
