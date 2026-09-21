@@ -123,7 +123,7 @@ most expensive artifact an agent can hand back.
   ships via the BSR. Never edit generated Go.
 - **`main`'s `go.mod` never carries the dev-local `replace`** (RELEASE-001).
 - **File extensions:** `.tape` is canonical; `.nevrcap` is accepted legacy input
-  and is read-only (the v1 writer was deliberately deleted in `1e54c6e`).
+  and is read-only (the v1 writer was deliberately deleted in `ea20c26`).
 
 **Verification action:** your plan states in one line which invariants the task
 touches, or "touches no invariant" with the reasoning.

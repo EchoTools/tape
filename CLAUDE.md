@@ -41,7 +41,7 @@ Three codec implementations for telemetry frame serialization:
 
 - **TapeV1** — Zstd-compressed, length-delimited protobuf stream using `telemetry.v1` types.
   Reads a `TelemetryHeader` followed by sequential `LobbySessionStateFrame` messages.
-  Read-only: the v1 writer was deliberately removed in `1e54c6e`.
+  Read-only: the v1 writer was deliberately removed in `ea20c26`.
   File extensions: `.tape`, `.nevrcap` (legacy).
 - **TapeV2** — Zstd-compressed, length-delimited `telemetry.v2.Envelope` stream.
   Game-agnostic envelope with `CaptureHeader`, sequential `Frame` messages, and `CaptureFooter`

@@ -19,8 +19,8 @@ import (
 // SpeedBetterCompression and SpeedBestCompression each give 8 MiB
 // (compress@v1.19.2 zstd/encoder_options.go:246-259; the package default is
 // also 8 MiB at :42). Every encoder in this package is constructed with
-// WithEncoderLevel and no window option — tape.go:133,137 @ 5bcb5a3 and
-// tape_blocks.go:198,203 @ 5bcb5a3 — so 8 MiB is the ceiling our own writer can
+// WithEncoderLevel and no window option — tape.go:133,137 @ bdf131f and
+// tape_blocks.go:198,203 @ bdf131f — so 8 MiB is the ceiling our own writer can
 // reach.
 //
 // THE TWO CITATIONS ABOVE ARE THE WHOLE DERIVATION, and they are pinned because
@@ -29,7 +29,7 @@ import (
 //
 //	git grep -n 'WithWindowSize' <sha> -- pkg cmd
 //
-// EXPECTED OUTPUT IS NOT EMPTY, and saying so is the point: at 5bcb5a3 it was,
+// EXPECTED OUTPUT IS NOT EMPTY, and saying so is the point: at bdf131f it was,
 // but this comment and seekable_window_test.go now match it, so a reader running
 // it today gets three hits and must read them rather than count them.
 //

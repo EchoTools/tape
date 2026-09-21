@@ -112,7 +112,7 @@ func allocatedDuring(fn func()) uint64 {
 // while the FCS cross-check, the decoder cap and the decoded-size equality each
 // pass alone. "Removing the checks fails on behaviour" is true of the set and not
 // of the members, and reading it as the latter is what left the residual F4 hole
-// open until 9c019a7.
+// open until cc39863.
 
 // TestReadBlockRefusesASizeTheFileCannotHold is SEC-002 on the seeking path: a
 // seek table claiming a block larger than the file must be refused BEFORE the

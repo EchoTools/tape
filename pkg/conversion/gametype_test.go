@@ -8,7 +8,7 @@ import "testing"
 //	    echo_arena_private, echo_combat, echo_combat_private, etc. as gametype"
 //	    and separately combat_tournament / arena_tournament.
 //	[T] the Title_Case v1 echoreplay spellings the shipped matchTypeMap held
-//	    before it was removed (mapping.go:40-47 @ c453ef7).
+//	    before it was removed (mapping.go:40-47 @ cba7273).
 //	[C] nevr-common proto/api/v1/http_v1.proto:98-101 @ 4e367f3 -- api/v1 `mode`,
 //	    "e.g. \"echo_arena_private\"" (lowercase).
 //	[F] echo_arena_frenzy -- announced, never observed. The whole point.
