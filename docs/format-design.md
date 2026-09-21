@@ -138,6 +138,12 @@ properties 3a/3b hold it to that byte for byte against every baseline.
 | per-block + dict 1s | 1503 | **−5.0%** | yes | 256 µs |
 | per-block + dict 5s | 1495 | **−5.6%** | yes | 570 µs |
 
+Every number here is from one 34-second, 1023-frame capture. Whole-stream seek
+cost grows with capture length and per-block stays flat, so the gap should widen
+on a full match — unmeasured. Encode cost of per-block vs whole-stream is also
+unmeasured: `BenchmarkShippedLayoutSize`'s ns/op reports a cached size, not
+encode time.
+
 Byte-range access is **not a premium**: with a trained dictionary the seekable
 layout is smaller than the one that cannot seek. Per-block alone costs +2.7%
 because resetting the match window every block barely matters — whole-stream
@@ -150,6 +156,13 @@ reader without it fails with `ErrUnknownDictionary` rather than returning wrong
 bytes, but the bytes must be stored somewhere reachable. `codec.TrainDictionary`
 and `codec.TrainDictionaryFromCaptures` produce one; **who owns storage and
 distribution is an open operational question, not a format one.**
+
+That guarantee covers a *missing* dictionary only. Two different dictionaries
+trained under the same id are indistinguishable to the reader; the damage
+surfaces only as a checksum failure — within one block for per-block captures,
+at end of file for whole-stream ones. The caller chooses the id, so **id
+allocation is part of the storage obligation.** Storing a dictionary hash was
+rejected (`pkg/codec/seekable.go`, the F3 comment in the block decoder).
 
 ## 3. What v2 keeps vs. drops (measured, not asserted)
 
@@ -198,17 +211,40 @@ Measured on a real arena recording (`TestFieldLossAudit`, 22,727 frames /
   The reconstructor **is** built (§1).
 - **What still does not round-trip** (measured; `TestRoundTripBAC` reports this as
   a finding):
-  - `last_throw` — the engine reports only the **local player's** last throw
-    (local-player-only), so the value in a Spark recording is one player's
-    perspective. v2 carries throws as `DiscThrown` events; reconstructing
-    `last_throw` from them would fabricate data for every other player. See
-    gh #35 (CANONICAL-001 §2) — a known limitation, not a fixable defect, until
-    the local-player identity problem is solved upstream.
+  - `last_throw` — the engine reports only the **recording client's** own last
+    throw, so it exists only in client-recorded captures. The archive's captures
+    come from the game server, which never records it. **Out of scope, not a
+    gap:** it is not stored and must never be reconstructed from `DiscThrown`
+    (that fabricates data). gh #35.
+  - `game_clock_display` — rebuilt by truncating the stored `float32` clock to
+    centiseconds (`gameClockDisplay`, `pkg/conversion/reconstruct.go`). Measured
+    2026-09-21 on `rec_2026-07-09_20-12-37.echoreplay` line 8633: `"01:43.52"`
+    in, `"01:43.51"` out — the ~5e-6 boundary window the comment predicted.
+    Display text only: `game_clock` itself and `game_status` (which drives
+    `RoundEndSensor`) round-trip.
+  - **Not byte-exact.** Measured 2026-09-21 on three real captures (10,581,
+    2,613 and 8,106 frames; 0 dropped): separators, top-level key order, float
+    printing and line endings (LF sources come back CRLF) differ; empty keys the
+    engine never wrote are emitted (`Weapon`/`Ordnance`/`TacMod`, `payload_*`,
+    `client_name` on recorders that omitted it); orientation basis differs by up
+    to 2.93e-3 per component (≈0.17°) because the engine's basis is not exactly
+    orthonormal and the quaternion is. Whether the deletion gate requires
+    byte-exact floats or only exact values is open in gh #46.
 - **Goal:** v2 is a working superset for the recoverable lane (kinematics +
   identity + loadout + grab + disc + scores). `last_score` (LASTSCORE-001),
   per-frame `jersey_number` / `level` (ROSTER-001), and the scoreboard seed
-  round-trip; `last_throw` is the one remaining field-level gap and is by
-  design.
+  round-trip.
+- **The deletion gate.** `.tape` exists so the `.echoreplay` archive can be
+  deleted. A source file may be deleted only because *that file* passed a
+  whole-file `echoreplay → .tape → echoreplay` verification with an empty
+  allowlist: every field of every frame compared, and an error on a field
+  missing from either side, any difference, an unparseable line, an unknown
+  JSON key, or a surplus zip member. Belief that the format is good is not
+  enough and a sample is not enough; the run covers every recording and writes
+  a per-file receipt (source sha256, line count, frame count, per-field diffs,
+  verdict). Main has no such verifier: `tapedeck verify` checks events only,
+  and `tapedeck convert` cannot write `.echoreplay`. The differ lives on
+  `archive/fidelity-batch-2026-07-25` (gh #43); the corpus run is gh #57.
 
 ## 5. Identity / roster reconstruction (the per-frame state is anonymized)
 

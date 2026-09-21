@@ -32,11 +32,15 @@ preserved in git history.
 
 ## 2. Branch discipline
 
-- Never push directly to `main` from a topic branch.
-- Feature branches use the conventional commit prefix: `feat/<name>`,
-  `fix/<name>`, `docs/<name>`, `test/<name>`, `refactor/<name>`,
-  `chore/<name>`, `build/<name>`.
-- The pre-push hook enforces the no-direct-push-to-main rule.
+- Work lands on `main` behind `just`. No long-lived topic branches; a branch
+  found lying around is merged and deleted in the same pass.
+- Before deleting a branch, check `git rev-list --count main..<branch>`. Commits
+  that cannot be merged cheaply are preserved first as a pushed annotated tag —
+  `git tag -a archive/<what>-<YYYY-MM-DD> <tip> -m "Archived: <what> (<N>
+  commits)"`, `git push origin archive/...` — with a GitHub issue saying what
+  it holds, and the branch is deleted only after the tag is on origin.
+  Precedent: `archive/fidelity-batch-2026-07-25` / gh #43.
+- The pre-push hook blocks pushing to `main` from any other branch.
 
 ## 3. Closed-loop gate
 
