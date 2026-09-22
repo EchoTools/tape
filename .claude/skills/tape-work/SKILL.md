@@ -1,6 +1,6 @@
 ---
 name: tape-work
-description: Execution harness for any implementation, investigation, or format task in the tape repo (Go 1.26 codec library + tapedeck CLI for .tape/.echoreplay telemetry captures). Walks the repo's discipline gate by gate — GO-addendum pre-read, orient on the format reference, measure-before-assert against protos and real captures, decision gates on the fidelity invariants, spec-before-code, `just` as the closed-loop gate, and the GitHub issue tracker for bugs — with a verification action and an abort condition at every gate. Invoke BEFORE starting any task in this repository.
+description: Execution harness for any implementation, investigation, or format task in the tape repo (Go 1.27 codec library + tapedeck CLI for .tape/.echoreplay telemetry captures). Walks the repo's discipline gate by gate — GO-addendum pre-read, orient on the format reference, measure-before-assert against protos and real captures, decision gates on the fidelity invariants, spec-before-code, `just` as the closed-loop gate, and the GitHub issue tracker for bugs — with a verification action and an abort condition at every gate. Invoke BEFORE starting any task in this repository.
 ---
 
 # /tape-work — the execution harness for this repository
