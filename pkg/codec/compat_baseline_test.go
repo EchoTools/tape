@@ -158,6 +158,11 @@ var compatBaselines = []compatBaseline{
 			"Not a tag: the commit that performed the bump, added for the same reason " +
 			"as 2b3fe97 — after it no older row pins HEAD's byte-affecting dependencies",
 	},
+	{
+		Ref: "f891b4e",
+		Why: "the klauspost/compress bump to v1.20.0. Not a tag: the commit that " +
+			"performed the bump, added for the same reason as 2b3fe97 and e1761fc",
+	},
 }
 
 // byteIdenticalPins are the module requirements whose versions can change the
