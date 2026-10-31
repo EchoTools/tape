@@ -18,6 +18,7 @@ func main() {
 	root.AddCommand(newStatsCommand())
 	root.AddCommand(newDiffCommand())
 	root.AddCommand(newTrimCommand())
+	root.AddCommand(newExportCommand())
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
