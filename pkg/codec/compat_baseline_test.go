@@ -452,13 +452,25 @@ func modulePath(gomod string) (string, error) {
 	return "", fmt.Errorf("no module declaration in %s", gomod)
 }
 
-// repoRoot returns the working tree root.
+// repoRoot returns the working tree root. GIT_DIR and GIT_WORK_TREE are
+// stripped from the environment: git hooks export GIT_DIR, and with it set git
+// takes the test's package directory as the work tree, so the root would come
+// back as pkg/codec and the harness source would not be found.
 func repoRoot() (string, error) {
-	out, err := runIn(".", "git", "rev-parse", "--show-toplevel")
-	if err != nil {
-		return "", err
+	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
+	env := make([]string, 0, len(os.Environ()))
+	for _, kv := range os.Environ() {
+		if strings.HasPrefix(kv, "GIT_DIR=") || strings.HasPrefix(kv, "GIT_WORK_TREE=") {
+			continue
+		}
+		env = append(env, kv)
 	}
-	return strings.TrimSpace(out), nil
+	cmd.Env = env
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("git rev-parse --show-toplevel: %w: %s", err, out)
+	}
+	return strings.TrimSpace(string(out)), nil
 }
 
 func runIn(dir, name string, args ...string) (string, error) {
