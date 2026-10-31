@@ -300,6 +300,13 @@ func (e *EchoReplay) WriteReplayFrame(dst *bytes.Buffer, frame *telemetry.LobbyS
 	if err != nil {
 		return 0
 	}
+	if isCombatMatchType(frame.GetSession().GetMatchType()) {
+		shaped, shapeErr := shapeCombatSession(e.scratchBuf)
+		if shapeErr != nil {
+			return 0
+		}
+		e.scratchBuf = shaped
+	}
 	e.scratchBuf = FixProtojsonUint64Encoding(e.scratchBuf)
 	e.scratchBuf = FixEngineFloatFormatting(e.scratchBuf)
 	dst.Write(e.scratchBuf)
@@ -621,7 +628,11 @@ func (e *EchoReplay) parseFrameLine(line []byte) (*telemetry.LobbySessionStateFr
 	// *_team_restart_request fields as JSON booleans, which protojson rejects
 	// for their int32 proto type; coerce them to numbers first.
 	sessionResponse := &enginev1.SessionResponse{}
-	if err := e.unmarshaler.Unmarshal(FixBooleanInt32Fields(parts[1]), sessionResponse); err != nil {
+	sessionJSON, unnestErr := unnestCombatPayload(parts[1])
+	if unnestErr != nil {
+		return nil, fmt.Errorf("failed to unnest combat payload: %w", unnestErr)
+	}
+	if err := e.unmarshaler.Unmarshal(FixBooleanInt32Fields(sessionJSON), sessionResponse); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal session data: %w", err)
 	}
 
@@ -833,7 +844,11 @@ func (e *EchoReplay) parseFrameLineTo(line []byte, frame *telemetry.LobbySession
 	if frame.Session == nil {
 		frame.Session = &enginev1.SessionResponse{}
 	}
-	if err := e.unmarshaler.Unmarshal(FixBooleanInt32Fields(sessionBytes), frame.Session); err != nil {
+	sessionJSON, unnestErr := unnestCombatPayload(sessionBytes)
+	if unnestErr != nil {
+		return fmt.Errorf("failed to unnest combat payload: %w", unnestErr)
+	}
+	if err := e.unmarshaler.Unmarshal(FixBooleanInt32Fields(sessionJSON), frame.Session); err != nil {
 		return fmt.Errorf("failed to unmarshal session data: %w", err)
 	}
 
