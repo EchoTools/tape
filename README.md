@@ -29,6 +29,12 @@ tapedeck convert --recursive --output-dir out/ ./replays
 tapedeck convert --workers 8 *.echoreplay
 ```
 
+**export echoreplay** — Reconstruct a `.tape` as a `.echoreplay` file (one tab-separated `timestamp\tsessionJSON` line per frame) and print the frame count written.
+
+```bash
+tapedeck export echoreplay capture.tape capture.echoreplay
+```
+
 **show** — Display tape file contents (header, frames, footer).
 Output formats: text, json, summary. Optional event filtering.
 
