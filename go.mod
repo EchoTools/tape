@@ -4,7 +4,7 @@ go 1.27.0
 
 require (
 	buf.build/gen/go/echotools/nevr-api/protocolbuffers/go v1.36.12-20260921215355-cae473b86bfc.2
-	github.com/klauspost/compress v1.20.0
+	github.com/klauspost/compress v1.20.3
 	github.com/schollz/progressbar/v3 v3.19.1
 	github.com/spf13/cobra v1.10.2
 	google.golang.org/protobuf v1.36.12
